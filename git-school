@@ -34,8 +34,8 @@ prev() {
 
 start() {
     BRANCH=$1
-    git checkout $BRANCH
-    FIRST_COMMIT=$(git rev-list ^master $BRANCH | tail -n 1)
+    git checkout $BRANCH -- 
+    FIRST_COMMIT=$(git rev-list ^master $BRANCH -- | tail -n 1)
     echo "git checkout $FIRST_COMMIT"
     git checkout $FIRST_COMMIT
 }
