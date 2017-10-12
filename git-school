@@ -32,6 +32,10 @@ prev() {
     fi
 }
 
+see() {
+    git checkout $1
+}
+
 start() {
     BRANCH=$1
     git checkout $BRANCH -- 
@@ -105,6 +109,10 @@ case "$1" in
 
     search)
         search $2
+    ;;
+
+    see)
+        see $2
     ;;
     
     *)
