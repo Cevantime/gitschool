@@ -1,0 +1,115 @@
+#!/bin/bash -e
+
+next() {
+    HEAD=$(git rev-parse HEAD)
+    FORWARD=$(git log --format='%H %P' --all | grep -F " $HEAD" | cut -f1 -d' ')
+    if [ "" == "$FORWARD" ]; then
+        echo 'Unable to go next step' >&2
+    else
+        git reset --hard > /dev/null
+        HASH=$(git describe --always $FORWARD)
+        git checkout $HASH
+    fi
+}
+
+main() {
+    git checkout master
+}
+
+prev() {
+    HEAD=$(git rev-parse HEAD)
+    BRANCH=$(git branch --contains $HEAD | tail -1)
+    BACKWARD=$(git log -1 --format='%P')
+    HASH=$(git describe --always $BACKWARD)
+    NEXT_BRANCH=$(git branch --contains $HASH | tail -1)
+    echo "New branch $NEXT_BRANCH"
+    if [ "$NEXT_BRANCH" == "$BRANCH" ]; then
+        git reset --hard > /dev/null
+        git checkout $HASH
+    else
+        echo 'Unable to fetch prev step' >&2
+        exit 1
+    fi
+}
+
+start() {
+    BRANCH=$1
+    git checkout $BRANCH
+    FIRST_COMMIT=$(git rev-list ^master $BRANCH | tail -n 1)
+    echo "git checkout $FIRST_COMMIT"
+    git checkout $FIRST_COMMIT
+}
+
+new() {
+    NEWBRANCH=$1
+    main
+    git checkout -b $NEWBRANCH
+    if [ ! -f $NEWBRANCH ] ; then
+        mkdir -p $NEWBRANCH
+        printf "Welcome to the new $NEWBRANCH lesson\n===========" > "$NEWBRANCH/README.md"
+    fi
+}
+
+fixDetached() {
+    REFBRANCH=$1
+
+    echo "Ref branch is $REFBRANCH";
+
+    for i in ${@:3}
+    do
+        git checkout $i;
+        git branch fixfixfix;
+        git checkout $REFBRANCH;
+        git rebase fixfixfix;
+        git branch -d fixfixfix;
+    done
+}
+
+list() {
+    git branch -r | sed -e 's/origin\///' | sed -e 's/master//'
+}
+
+search() {
+    list | grep -i $1
+}
+
+case "$1" in
+
+    next)
+        next
+    ;;
+
+    prev)
+        prev
+    ;;
+
+    start)
+        start $2
+    ;;
+
+    new)
+        new $2
+    ;;
+
+    fix-detached)
+        fixDetached $2
+    ;;
+
+    main)
+        main
+    ;;
+
+    list)
+        list
+    ;;
+
+    search)
+        search $2
+    ;;
+    
+    *)
+        echo "Undefined command $1" >&2
+        exit 3
+    ;;
+esac
+
